@@ -18,7 +18,7 @@ class User < ActiveRecord::Base
     self.email = email unless email.nil?
     self.password = passowrd unless password.nil? 
     self.name = name.presence unless name.nil?
-    retuen self.save
+    return self.save
   end
   
   def token

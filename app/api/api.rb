@@ -11,7 +11,7 @@ class API < Grape::API
     def authenticated(headers)
       if token = headers["X-Token"]
         @session = Session.where(token: token).first
-        if session
+        if @session
           @current_user = User.where(id: @session.user_id).first
         end
       end

@@ -22,9 +22,9 @@ module V1
         end
       end
       
-      # PATCH /api/v1/users
+      # PATCH /api/v1/users/:user_id
       params do
-        optional :user_id,       type: String
+        optional :user_id,  type: String
         optional :password, type: String
         optional :name,     type: String
       end
