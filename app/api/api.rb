@@ -6,7 +6,8 @@ class API < Grape::API
 
   format :json
   formatter :json, Grape::Formatter::Jbuilder
-
+  error_formatter :json, Formatter::Error
+  
   helpers do
     def authenticated(headers)
       if token = headers["X-Token"]
@@ -15,7 +16,7 @@ class API < Grape::API
           @current_user = User.where(id: @session.user_id).first
         end
       end
-      error!("401 Unauthorized", 401) unless current_user
+      error!({ :code => 4, :message => "PERMISSION_DENIED", :detail => {} }, 401) unless current_user
     end
     
     def set_token

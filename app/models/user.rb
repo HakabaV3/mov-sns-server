@@ -14,10 +14,10 @@ class User < ActiveRecord::Base
   
   validates :name, presence: true
   
-  def update_data(email, password, name)
-    self.email = email unless email.nil?
-    self.password = passowrd unless password.nil? 
-    self.name = name.presence unless name.nil?
+  def update_data!(params)
+    self.email = params[:email] unless params[:email].nil?
+    self.password = params[:password] unless params[:password].nil? 
+    self.name = params[:name] unless params[:name].nil?
     return self.save
   end
   

@@ -4,7 +4,7 @@ module V1
       
       # POST api/v1/sessions/email
       params do
-        requires :id,         type: String
+        requires :email,         type: String
         requires :password,   type: String
       end
       post '/email', jbuilder: 'sessions/new' do
