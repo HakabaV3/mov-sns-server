@@ -4,10 +4,7 @@ module V1
       
       helpers do
         def validation_params(params)
-          detail = {}
-          detail[:email] = params[:email] unless User.where(email: params[:email]).count == 0
-          detail[:name] = params[:name] unless User.where(name: params[:name]).count == 0
-          
+          detail = User.is_used(params)
           if detail[:email] || detail[:name]
             error!({ code: 4, message: "ALREADY_USED", detail: detail})
           end

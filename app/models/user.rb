@@ -14,13 +14,6 @@ class User < ActiveRecord::Base
   
   validates :name, presence: true
   
-  def update_data!(params)
-    self.email = params[:email] unless params[:email].nil?
-    self.password = params[:password] unless params[:password].nil? 
-    self.name = params[:name] unless params[:name].nil?
-    return self.save
-  end
-  
   def token
     return self.sessions.pluck(:token).first
   end
@@ -42,5 +35,23 @@ class User < ActiveRecord::Base
   def has_invited?(group_id)
     return self.invited.where(group_id: group_id).first.present?
   end
+
+  def self.is_used(params)
+    detail = {}
+    if params[:email].present?
+      detail[:email] = params[:email] if User.where(email: params[:email]).count > 0
+    end
+    if params[:name].present?
+      detail[:name] = params[:name] if User.where(name: params[:name]).count > 0 
+    end
+    return detail
+  end
   
+  def update_data!(params)
+    self.email = params[:email] unless params[:email].nil?
+    self.password = params[:password] unless params[:password].nil? 
+    self.name = params[:name] unless params[:name].nil?
+    return self.save
+  end
+    
 end
