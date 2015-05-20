@@ -19,6 +19,17 @@ class API < Grape::API
       error!({ :code => 4, :message => "PERMISSION_DENIED", :detail => {} }, 401) unless current_user
     end
     
+    def authenticated?(headers)
+      return false if headers["X-Token"].nil?
+      
+      @session = Session.where(token: headers["X-Token"]).first
+      if @session
+        @current_user = User.where(id: @session.user_id).first
+        return true
+      end
+      return false
+    end
+    
     def set_token
       header "X-Token", "#{current_user.token}"
     end

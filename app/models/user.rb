@@ -18,22 +18,22 @@ class User < ActiveRecord::Base
     return self.sessions.pluck(:token).first
   end
   
-  def join_group(group_id)
-    group = Group.where(id: group_id).first
+  def join_group(group_name)
+    group = Group.where(name: group_name).first
     group.users << self
     return group.save
   end
   
-  def leave_group(group_id)
-    return self.groups.destroy(Group.where(id: group_id).first)
+  def leave_group(group_name)
+    return self.groups.destroy(Group.where(name: group_name).first)
   end
   
-  def joined?(group_id)
-    return self.groups.where(id: group_id).first.present?
+  def joined?(group_name)
+    return self.groups.where(name: group_name).first.present?
   end
   
-  def has_invited?(group_id)
-    return self.invited.where(group_id: group_id).first.present?
+  def has_invited?(group_name)
+    return self.invited.where(name: group_name).first.present?
   end
 
   def self.is_used(params)

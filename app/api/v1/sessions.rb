@@ -10,7 +10,7 @@ module V1
       post '/email', jbuilder: 'sessions/new' do
         @user = User.where(email: params[:id]).first
         if !@user || !@user.try(:valid_password?, params[:password])
-          error!("メールアドレスまたはパスワードが正しくありません。", 401)
+          error!({code: 4, message: "INVALID_PARAMETER", detail: {email: params[:email], password: ""}}, 401)
         end
         set_data(@user)
       end

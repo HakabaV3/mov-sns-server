@@ -5,4 +5,11 @@ json.set! :result do
   json.updated     @group.updated_at
   json.name        @group.name
   json.description @group.description
+  json.set! :users do
+    json.array! @users do |user|
+      json.id    user.id
+      json.name  user.name
+      json.email user.email
+    end
+  end
 end

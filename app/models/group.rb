@@ -8,4 +8,11 @@ class Group < ActiveRecord::Base
   
   accepts_nested_attributes_for :users
   
+  def self.available?(params)
+    if Group.where(name: params[:group_name]).count > 0
+      return false
+    end
+    return true
+  end
+    
 end

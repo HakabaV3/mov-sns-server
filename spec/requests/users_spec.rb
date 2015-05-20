@@ -2,12 +2,10 @@ require 'rails_helper'
 
 RSpec.describe "Users", :type => :request do
   before do
-    @user = create(:user, { id: 100,
-                            name: "kikurage",
-                            email: "kikurage@sample.com",
-                            password: "kikurage_password"})
+    @user = create(:user)
     @session = create(:session, { user_id: @user.id,
                                   token: "ksnao383290810yh48hn"})
+    @path = "/api/v1/users/#{@user.name}"
     @header = {  "Contetnt-Type" => "application/json" }
     @token_header = { "Contetnt-Type" => "application/json", "X-Token" => @session.token }
   end
@@ -57,7 +55,7 @@ RSpec.describe "Users", :type => :request do
     
     it '"email"が既に使用されている' do
       expect {
-        post 'api/v1/users', { email: "kikurage@sample.com",
+        post 'api/v1/users', { email: @user.email,
                                password: "kikurage_password",
                                name: "kikurage"}
       }.to change{ User.count }.by(0)
@@ -123,7 +121,7 @@ RSpec.describe "Users", :type => :request do
     it '通常' do
       params = {}
       expect {
-        delete 'api/v1/users/kikurage', params, @token_header    
+        delete @path, params, @token_header    
       }.to change{ User.count }.by(-1)
     
       expect(response.status).to eq 200
