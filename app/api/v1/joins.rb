@@ -36,7 +36,7 @@ module V1
       delete ':user_name' do
         authenticated(headers)
         @current_user = current_user
-        error!({code: 1, message: "NOT_FOUND", detail: {}}, 404) unless @current_user.has_invited?(params[:group_name])
+        error!({code: 1, message: "NOT_FOUND", detail: {}}, 404) unless @current_user.joined?(params[:group_name])
         error!({code: 1, message: "NOT_FOUND", detail: {}}, 404) unless @current_user.name == params[:user_name] 
 
         @current_user.leave_group(params[:group_name])

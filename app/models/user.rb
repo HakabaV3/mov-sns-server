@@ -30,7 +30,7 @@ class User < ActiveRecord::Base
   end
   
   def leave_group(group_name)
-    return self.groups.destroy(Group.where(name: group_name).first)
+    self.groups.where(name: group_name).first.users.delete(self)
   end
   
   def joined?(group_name)

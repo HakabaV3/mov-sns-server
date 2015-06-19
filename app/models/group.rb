@@ -19,6 +19,12 @@ class Group < ActiveRecord::Base
     return true
   end
   
+  def remove_user(user)
+    if self.users.where(id: user.id).count > 0
+      self.users.delete(user)
+    end
+  end
+
 #  def owner
 #    return User.where(id: self.owner_id).first
 #  end

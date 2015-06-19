@@ -18,6 +18,12 @@ module ApiHelper
     @invitation = create(:invitation)
     @owner_token = create(:session, user_id: @invitation.owner_id).token
     @target_token = create(:session, user_id: @invitation.target_id).token
+
+    @group = @invitation.group
+    @joined_user = create(:user)
+    @group.users << @joined_user
+    @group.save
+    @joined_token = create(:session, user_id: @joined_user.id).token
   end
   
   # Common JSON
