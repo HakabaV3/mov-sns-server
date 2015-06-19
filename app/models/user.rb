@@ -18,10 +18,15 @@ class User < ActiveRecord::Base
     return self.sessions.pluck(:token).first
   end
   
+  def self.search_by_name(name)
+    return self.where(name: name).first
+  end
+  
   def join_group(group_name)
     group = Group.where(name: group_name).first
     group.users << self
-    return group.save
+    group.save
+    return Invitation.cancel(self)
   end
   
   def leave_group(group_name)
@@ -33,7 +38,10 @@ class User < ActiveRecord::Base
   end
   
   def has_invited?(group_name)
-    return self.invited.where(name: group_name).first.present?
+    self.invited.each do |invitation|
+      return true if invitation.group.name == group_name
+    end
+    return false
   end
 
   def self.is_used(params)

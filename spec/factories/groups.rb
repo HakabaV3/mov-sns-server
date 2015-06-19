@@ -1,16 +1,11 @@
 FactoryGirl.define do
   factory :group do
-    name "Hakaba"
+    sequence(:name) { |n| "Hakaba#{n}" }
     description "The Hakaba."
-    owner_id 100
-    
-    association :owner, factory: :user, id: 100,
-                                        name: "kikurage",
-                                        email: "kikurage@sample.com",
-                                        password: "kikurage_password",
-                                        strategy: :create
+
+    owner_id { create(:user).id }
     users {
-      create_list(:user, 10)
+      create_list(:user, 3)
     }
   end
   

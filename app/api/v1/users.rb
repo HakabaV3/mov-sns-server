@@ -6,7 +6,7 @@ module V1
         def validation_params(params)
           detail = User.is_used(params)
           if detail[:email] || detail[:name]
-            error!({ code: 4, message: "ALREADY_USED", detail: detail})
+            error!({ code: 4, message: "ALREADY_CREATED", detail: detail}, 401)
           end
         end
       end
@@ -25,11 +25,8 @@ module V1
           password: params[:password],
           password_confirmation: params[:password]
         )
-        if @user.save
-          set_data(@user)
-        else
-          error!({ code: 4, message: "FAILED_TO_CREATE", detail: params })
-        end
+        @user.save
+        set_data(@user)
       end
       
       # PATCH /api/v1/users/:user_name (private)
@@ -41,7 +38,7 @@ module V1
       end
       patch ':user_name', jbuilder: "sessions/new" do
         authenticated(headers)
-        error!({code: 4, message: "NOT_MATCH_USER_NAME", detail: {name: params[:user_name]}}, 401) unless current_user.name == params[:user_name]
+        error!({code: 1, message: "NOT_FOUND", detail: {name: params[:user_name]}}, 401) unless current_user.name == params[:user_name]
         
         @user = current_user
         @user.update_data!(params)
@@ -54,7 +51,7 @@ module V1
       end
       delete ':user_name', jbuilder: 'sessions/delete' do
         authenticated(headers)
-        error!({code: 4, message: "NOT_MATCH_USER_NAME", detail: {name: params[:user_name]}}, 401) unless current_user.name == params[:user_name]
+        error!({code: 1, message: "NOT_FOUND", detail: {name: params[:user_name]}}, 401) unless current_user.name == params[:user_name]
         
         @user = current_user
         @user.destroy

@@ -14,7 +14,7 @@ module V1
       get ':group_name', jbuilder: 'groups/new' do
         @users = []
         @group = Group.where(name: params[:group_name]).first
-        error!({code: 4, message: "GROUP_NOT_FOUND", detail: {name: params[:group_name]}}, 401) unless @group.present?
+        error!({code: 1, message: "NOT_FOUND", detail: {group_name: params[:group_name]}}, 404) unless @group.present?
 
         if authenticated?(headers)
           @users = @group.users if current_user.joined?(@group.name)
@@ -27,7 +27,7 @@ module V1
       end
       post '', jbuilder: 'groups/new' do
         authenticated(headers)
-        error({code: 4, message: "ALREADY_USED", detail: {group_name: params[:group_name]}}) unless Group.available?(params)
+        error({code: 4, message: "ALREADY_CREATED", detail: {group_name: params[:group_name]}}, 422) unless Group.available?(params)
         
         @group = Group.new(name: params[:group_name])
         @group.owner_id = current_user.id
@@ -41,9 +41,15 @@ module V1
       delete ':group_name', jbuilder: 'groups/delete' do
         authenticated(headers)
         @group = Group.where(name: params[:group_name]).first
-        error!({code: 4,
+        @owner = User.where(id: @group.owner_id).first unless @group.nil?
+        
+        error!({code: 1,
+                message: "NOT_FOUND",
+                detail: {group_name: params[:group_name]}}, 404) unless @group.present?
+        
+        error!({code: 2,
                 message: "PERMISSION_DENIED",
-                detail: {owner_name: @group.owner.name,
+                detail: {owner_name: @owner.name,
                          user_name: current_user.name}}, 401) unless @group.owner_id == current_user.id
         @group.destroy
         status 200

@@ -1,23 +1,20 @@
 require 'rails_helper'
+require 'json_expressions/rspec'
 
 RSpec.describe "Groups", :type => :request do
+  include ApiHelper
   
   before do
-    @user = create(:user)
-    @hakaba = create(:group)
-    @session = create(:session, { user_id: @user.id,
-                                  token: "ksnao383290810yh48hn"})
-    @owner_session = create(:session, { user_id: 100,
-                                        token: "ownerownerownerowner"})
+    create_group
     
-    @header = {  "Contetnt-Type" => "application/json" }
-    @token_header = { "Contetnt-Type" => "application/json", "X-Token" => @session.token }
-    @owner_header = { "Contetnt-Type" => "application/json", "X-Token" => @owner_session.token }
+    @header = { "Contetnt-Type" => "application/json" }
+    @token_header = { "Contetnt-Type" => "application/json", "X-Token" => @token }
+    @owner_header = { "Contetnt-Type" => "application/json", "X-Token" => @owner_token }
   end
   
   describe 'GET /groups' do
     it '通常' do
-      get '/api/v1/groups', {}
+      get '/api/v1/groups'
       
       expect(response.status).to eq 200
       
@@ -27,19 +24,17 @@ RSpec.describe "Groups", :type => :request do
   end
   
   describe 'GET /groups/:group_name' do
-    it '通常' do
-      @hakaba.users << @user
-      
-      get 'api/v1/groups/Hakaba', {}, @token_header
+    it '通常' do      
+      get "api/v1/groups/#{@group.name}", {}, @owner_header
       
       expect(response.status).to eq 200
       
       json = JSON.parse(response.body)
-      expect(json["result"]["users"].count).to be > 0
+      expect(json).to match_json_expression(json_common)
     end
     
     it '認証はできたが、グループに参加していない' do
-      get 'api/v1/groups/Hakaba', {}, @token_header
+      get "api/v1/groups/#{@group.name}", {}, @token_header
       
       expect(response.status).to eq 200
       
@@ -48,11 +43,12 @@ RSpec.describe "Groups", :type => :request do
     end
     
     it '認証失敗' do
-      get 'api/v1/groups/Hakaba', {}, @header
+      get "api/v1/groups/#{@group.name}", {}, @header
       
       expect(response.status).to eq 200
       
       json = JSON.parse(response.body)
+      expect(json).to match_json_expression(json_common)
       expect(json["result"]["users"].count).to eq 0
     end
     
@@ -67,7 +63,7 @@ RSpec.describe "Groups", :type => :request do
       expect(response.status).to eq 201
       
       json = JSON.parse(response.body)
-      expect(json["status"]).to eq("OK")      
+      expect(json).to match_json_expression(json_common)      
     end
     
     it '認証失敗時' do
@@ -78,44 +74,55 @@ RSpec.describe "Groups", :type => :request do
       expect(response.status).to eq 401
       
       json = JSON.parse(response.body)
-      expect(json["result"]["type"]).to eq("PERMISSION_DENIED")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
   end
   
   describe 'DELETE /groups/:group_name' do
     it '通常' do
       expect {
-        delete '/api/v1/groups/Hakaba', {}, @owner_header      
+        delete "api/v1/groups/#{@group.name}", {}, @owner_header      
       }.to change{ Group.count }.by(-1)
       
       expect(response.status).to eq 200
+    end
+    
+    it 'グループ名が存在しない' do
+      expect {
+        delete 'api/v1/groups/abcdefg', {}, @owner_header
+      }.to change{ Group.count }.by(0)
+      
+      expect(response.status).to eq 404
       
       json = JSON.parse(response.body)
-      expect(json["status"]).to eq("OK")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
     it '認証失敗時' do
       expect {
-        delete '/api/v1/groups/Hakaba', {}, @header      
+        delete "api/v1/groups/#{@group.name}", {}, @header      
       }.to change{ Group.count }.by(0)
       
       expect(response.status).to eq 401
       
       json = JSON.parse(response.body)
-      expect(json["result"]["type"]).to eq("PERMISSION_DENIED")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
     it '認証はできたが、該当グループのオーナーではない' do
       expect {
-        delete '/api/v1/groups/Hakaba', {}, @token_header      
+        delete "api/v1/groups/#{@group.name}", {}, @token_header      
       }.to change{ Group.count }.by(0)
       
       expect(response.status).to eq 401
       
       json = JSON.parse(response.body)
-      expect(json["result"]["type"]).to eq("PERMISSION_DENIED")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
   end
-  
 end

@@ -1,7 +1,7 @@
 FactoryGirl.define do
   factory :session do
-    user nil
-    token "MyString"
+    user
+    sequence(:token) { |n| "abcdefg#{n}" }
   end
-
+  
 end

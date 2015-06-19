@@ -1,26 +1,32 @@
 require 'rails_helper'
+require 'json_expressions/rspec'
 
 RSpec.describe "Users", :type => :request do
-  before do
-    @user = create(:user)
-    @session = create(:session, { user_id: @user.id,
-                                  token: "ksnao383290810yh48hn"})
-    @path = "/api/v1/users/#{@user.name}"
+  include ApiHelper
+  
+  before(:each) do
+    create_token
     @header = {  "Contetnt-Type" => "application/json" }
-    @token_header = { "Contetnt-Type" => "application/json", "X-Token" => @session.token }
+    @token_header = { "Contetnt-Type" => "application/json", "X-Token" => @token }
   end
   
   describe 'POST /api/v1/users' do
+    before do
+      @path = "/api/v1/users/#{@current_user.name}"
+    end
+    
     it '通常' do
       expect {
         post 'api/v1/users', { email: "stogu@sample.com",
                                password: "stogu_password",
                                name: "stogu" }, @header
       }.to change{ User.count }.by(1)
-    
+      
+      expect(response.status).to eq 201
+      
       json = JSON.parse(response.body)
-      Rails.logger.debug json
-      expect(json["status"]).to eq("OK")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_session(json["result"]))
     end
     
     it '"id"が指定されていない' do
@@ -29,8 +35,11 @@ RSpec.describe "Users", :type => :request do
                                name: "stogu" }, @header
       }.to change{ User.count }.by(0)      
       
+      expect(response.status).to eq 400
+      
       json = JSON.parse(response.body)
-      expect(json["status"]).to eq("NG")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
     it '"password"が指定されていない' do
@@ -39,8 +48,11 @@ RSpec.describe "Users", :type => :request do
                                name: "stogu"}
       }.to change{ User.count}.by(0)
       
+      expect(response.status).to eq 400
+      
       json = JSON.parse(response.body)
-      expect(json["status"]).to eq("NG")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
     it '"name"が指定されていない' do
@@ -49,27 +61,32 @@ RSpec.describe "Users", :type => :request do
                                password: "stogu_password"}
       }.to change{ User.count }.by(0)
       
+      expect(response.status).to eq 400
+      
       json = JSON.parse(response.body)
-      expect(json["status"]).to eq("NG")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
     it '"email"が既に使用されている' do
       expect {
-        post 'api/v1/users', { email: @user.email,
+        post 'api/v1/users', { email: @current_user.email,
                                password: "kikurage_password",
                                name: "kikurage"}
       }.to change{ User.count }.by(0)
       
+      expect(response.status).to eq 401
+      
       json = JSON.parse(response.body)
-      expect(json["result"]["type"]).to eq("ALREADY_USED")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
   end
   
   describe 'PATCH /api/v1/users/:user_name' do
     before do
-      @path = "api/v1/users/#{@user.name}" 
+      @path = "api/v1/users/#{@current_user.name}" 
       @params = { name: "kikurage_updated" }
-      @token = @session.token
     end
     
     it '通常' do
@@ -78,7 +95,8 @@ RSpec.describe "Users", :type => :request do
       expect(response.status).to eq 200
     
       json = JSON.parse(response.body)
-      expect(json["result"]["user"]["name"]).to eq("kikurage_updated")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_session(json["result"]))
     end
     
     it 'X-Tokenが存在しない' do
@@ -86,7 +104,8 @@ RSpec.describe "Users", :type => :request do
       expect(response.status).to eq 401
       
       json = JSON.parse(response.body)
-      expect(json["result"]["type"]).to eq("PERMISSION_DENIED")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
     it 'X-Tokenが空' do
@@ -94,7 +113,8 @@ RSpec.describe "Users", :type => :request do
       expect(response.status).to eq 401
       
       json = JSON.parse(response.body)
-      expect(json["result"]["type"]).to eq("PERMISSION_DENIED")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
     it 'X-Tokenが間違っている' do
@@ -104,7 +124,8 @@ RSpec.describe "Users", :type => :request do
       expect(response.status).to eq 401
       
       json = JSON.parse(response.body)
-      expect(json["result"]["type"]).to eq("PERMISSION_DENIED")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
     it '認証しているが他人を編集しようとした' do
@@ -112,12 +133,17 @@ RSpec.describe "Users", :type => :request do
       expect(response.status).to eq 401
       
       json = JSON.parse(response.body)
-      expect(json["result"]["type"]).to eq("NOT_MATCH_USER_NAME")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
   end
   
   describe 'DELETE /api/v1/users/:name' do
+    before do
+      @path = "/api/v1/users/#{@current_user.name}"
+    end
+    
     it '通常' do
       params = {}
       expect {
@@ -125,9 +151,6 @@ RSpec.describe "Users", :type => :request do
       }.to change{ User.count }.by(-1)
     
       expect(response.status).to eq 200
-      
-      json = JSON.parse(response.body)
-      expect(json["status"]).to eq("OK")
     end
     
     it '認証しているが他人を編集しようとした' do
@@ -139,7 +162,8 @@ RSpec.describe "Users", :type => :request do
       expect(response.status).to eq 401
       
       json = JSON.parse(response.body)
-      expect(json["result"]["type"]).to eq("NOT_MATCH_USER_NAME")
+      expect(json).to match_json_expression(json_common)
+      expect(json["result"]).to match_json_expression(json_error)
     end
     
   end
